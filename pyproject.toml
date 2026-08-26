@@ -1,0 +1,31 @@
+[project]
+name = "origami-iros"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "einops>=0.8.2",
+    "lerobot>=0.6.1",
+    "numpy>=2.2.6",
+    "scikit-learn>=1.9.0",
+    "scipy>=1.18.1",
+    "tensordict>=0.14.0",
+    "torch>=2.11.0",
+    "torchvision>=0.26.0",
+    "transformers>=5.15.1",
+]
+
+[project.scripts]
+origami-iros = "origami_iros:main"
+
+[build-system]
+requires = ["uv_build>=0.11.31,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "marimo>=0.24.0",
+    "ruff>=0.16.4",
+    "ty>=0.0.74",
+]
