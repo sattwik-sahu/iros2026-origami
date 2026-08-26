@@ -4,6 +4,7 @@ import torch
 from einops import rearrange
 
 from origami_iros._typing import Action, Image, TensorData
+from origami_iros.modules._typing import RobotStateObservation
 
 
 class BaseEncoder[TInput, TEncoding: TensorData](torch.nn.Module, ABC):
@@ -18,7 +19,7 @@ class BaseEncoder[TInput, TEncoding: TensorData](torch.nn.Module, ABC):
 
 
 class BaseProprioceptiveStateEncoder[TEncoding: TensorData](
-    BaseEncoder[torch.Tensor, TEncoding], ABC
+    BaseEncoder[RobotStateObservation, TEncoding], ABC
 ):
     """The base state encoder module."""
 
