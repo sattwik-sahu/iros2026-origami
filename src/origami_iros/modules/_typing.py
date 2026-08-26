@@ -1,11 +1,9 @@
 """Tensorclass types describing VLTA observations, inputs, and outputs."""
 
-import numpy as np
 import torch
-from numpy import typing as npt
 from tensordict import TensorClass as TensorClass
 
-from origami_iros._typing import Image, TactileImage
+from origami_iros._typing import Action, Image
 
 
 class LeftRightImageObservation(TensorClass):
@@ -42,8 +40,8 @@ class TactileImageObservation(TensorClass):
         raw: Unprocessed tactile image straight from the sensor.
     """
 
-    deform: TactileImage
-    raw: TactileImage
+    deform: Image
+    raw: Image
 
 
 class ImageObservation(TensorClass):
@@ -91,9 +89,4 @@ class VLTA_Output(TensorClass):
         action: Predicted action (e.g. an end-effector or joint command).
     """
 
-    action: torch.Tensor
-
-
-#: Flat dictionary representation of VLTA inputs and outputs, as produced by
-#: :mod:`origami_iros.model.io`.
-type DictData = dict[str, npt.NDArray[np.uint8 | np.float32] | str]
+    action: Action
