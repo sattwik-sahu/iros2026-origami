@@ -72,12 +72,13 @@ class PretrainedHF_ViT_Encoder(BaseImageEncoder[torch.Tensor]):
     def forward(self, x: Image) -> torch.Tensor:
         inputs = self._processor(images=x, return_tensors="pt")
 
+        device = next(self._model.parameters()).device
+        inputs = inputs.to(device=device)
+
         with torch.inference_mode(mode=self._inference_only):
             outputs = self._model(**inputs)
 
-        outputs = outputs.last_hidden_state[:, 1:]
-
-        return outputs
+        return outputs.last_hidden_state[:, 1:]
 
 
 class TinyViT_TactileImageEncoder(BaseTactileImageEncoder[torch.Tensor]):
@@ -88,7 +89,7 @@ class TinyViT_TactileImageEncoder(BaseTactileImageEncoder[torch.Tensor]):
 
         self._model: torch.nn.Module = spt.backbone.utils.vit_hf(
             size="tiny",
-            image_size=image_size[0] // n_hands,
+            image_size=(image_size[0] // n_hands),
             patch_size=patch_size,
             num_channels=n_hands * n_fingers,
         )
@@ -96,6 +97,6 @@ class TinyViT_TactileImageEncoder(BaseTactileImageEncoder[torch.Tensor]):
     def forward(self, x: Image) -> torch.Tensor:
         x = self._reshape_image(image=x)
         x = x.mean(dim=3)  # Mean along RGB channels (since grayscale)
-        encodings: torch.Tensor = self._model(x)
-        encodings = encodings[:, 1:]
-        return encodings
+        x = rearrange(x, "b n_hands n_fingers h w -> b (n_hands n_fingers) h w")
+        outputs = self._model(x)
+        return outputs.last_hidden_state[:, 1:]

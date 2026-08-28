@@ -10,8 +10,8 @@ across process boundaries.
 
 import torch
 
+from origami_iros._typing import DictData
 from origami_iros.modules._typing import (
-    DictData,
     ImageObservation,
     LeftRightImageObservation,
     Observation,

@@ -20,6 +20,11 @@ dependencies = [
 [project.scripts]
 origami-iros = "origami_iros:main"
 
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests that download pretrained models (deselect with '-m \"not slow\"')",
+]
+
 [build-system]
 requires = ["uv_build>=0.11.31,<0.12.0"]
 build-backend = "uv_build"
@@ -27,6 +32,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "marimo>=0.24.0",
+    "pytest>=9.1.1",
     "ruff>=0.16.4",
     "ty>=0.0.74",
 ]
