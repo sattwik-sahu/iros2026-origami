@@ -70,6 +70,20 @@ class Observation(TensorClass):
     state: RobotStateObservation
 
 
+class ObservationEncoding(TensorClass):
+    """Encoding of the observation from the observation encoder.
+
+    Attributes:
+        camera_image (torch.Tensor): The encodings of the camera image(s).
+        tactile_image (torch.Tensor): The encodings of the tactile image(s).
+        state (torch.Tensor): The encodings of the proprioceptive states.
+    """
+
+    camera_image: torch.Tensor
+    tactile_image: torch.Tensor
+    state: torch.Tensor
+
+
 class VLTA_Input(TensorClass):
     """Input to the vision-language-tactile-action (VLTA) policy.
 
