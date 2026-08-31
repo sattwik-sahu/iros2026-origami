@@ -7,13 +7,13 @@ import wandb
 from torch.utils.data import DataLoader
 
 from origami_iros.modules.policy.vlta_policy import VLTAPolicy
-from origami_iros.modules.data.lerobot_seasons import build_train_val_datasets
+from origami_iros.modules.data.dataset import build_train_val_datasets
 from origami_iros.modules.data.collate import vlta_collate_fn
 
 
 @dataclass
 class TrainConfig:
-    data_root: str = "./data"
+    data_root: str = "/media/storage/Pranjal/shirish/origami/iros2026-origami/data"
     fps: int = 30
 
     vit_model_name: str = "facebook/dinov2-small"
@@ -38,7 +38,7 @@ class TrainConfig:
     action_num_heads: int = 8
     num_inference_steps: int = 10
     freeze_vit: bool = True
-    
+
     batch_size: int = 16
     num_workers: int = 8
     lr: float = 1e-4
