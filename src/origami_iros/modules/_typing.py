@@ -41,7 +41,7 @@ class TactileImageObservation(TensorClass):
     """
 
     deform: Image
-    raw: Image
+    raw: Image | None = None 
 
 
 class ImageObservation(TensorClass):

@@ -38,18 +38,21 @@ class CameraImageEncoder(BaseEncoder[ImageObservation, torch.Tensor]):
         return encodings
 
 
-class TactileImageEncoder(BaseEncoder[ImageObservation, torch.Tensor]):
-    def __init__(self, encoder: BaseTactileImageEncoder[torch.Tensor]) -> None:
-        super().__init__()
 
-        self._encoder: BaseTactileImageEncoder[torch.Tensor] = encoder
+
+class TactileImageEncoder(BaseEncoder[ImageObservation, torch.Tensor]):
+    def __init__(self, deform_encoder, raw_encoder=None, raw_dropout: float = 0.2):
+        super().__init__()
+        self._deform_encoder = deform_encoder
+        self._raw_encoder = raw_encoder
+        self._raw_dropout = raw_dropout
 
     def forward(self, x: ImageObservation) -> torch.Tensor:
-        image = x.tactile.raw
-        encodings: torch.Tensor = self._encoder(image)
-        return encodings
-
-
+        tokens = self._deform_encoder(x.tactile.deform)
+        use_raw = self._raw_encoder is not None and x.tactile.raw is not None
+        if use_raw and (not self.training or torch.rand(1).item() > self._raw_dropout):
+            tokens = torch.cat([tokens, self._raw_encoder(x.tactile.raw)], dim=1)
+        return tokens
 class PretrainedHF_ViT_Encoder(BaseImageEncoder[torch.Tensor]):
     """Any ViT encoder from Huggingface."""
 
