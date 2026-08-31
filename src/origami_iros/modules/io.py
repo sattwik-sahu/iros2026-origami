@@ -1,25 +1,25 @@
 """Serialization utilities for VLTA inputs and outputs.
 
 These helpers convert between the structured
-:class:`~origami_iros.model._typing.VLTA_Input` /
-:class:`~origami_iros.model._typing.VLTA_Output` tensorclasses and a flat
-:class:`~origami_iros.model._typing.DictData` dictionary of numpy arrays and
+:class:`~origami_iros.modules._typing.VLTA_Input` /
+:class:`~origami_iros.modules._typing.VLTA_Output` tensorclasses and a flat
+:class:`~origami_iros.modules._typing.DictData` dictionary of numpy arrays and
 strings, which is a convenient format for logging, caching, or sending data
 across process boundaries.
 """
 
 import torch
 
-from origami_iros.model._typing import (
-    DictData,
+from origami_iros._typing import DictData
+from origami_iros.modules._typing import (
     ImageObservation,
     LeftRightImageObservation,
     Observation,
     RobotStateObservation,
     TactileImageObservation,
 )
-from origami_iros.model._typing import VLTA_Input as VLTA_Input
-from origami_iros.model._typing import VLTA_Output as VLTA_Output
+from origami_iros.modules._typing import VLTA_Input as VLTA_Input
+from origami_iros.modules._typing import VLTA_Output as VLTA_Output
 
 
 def _to_tensor(d: DictData, key: str) -> torch.Tensor:
