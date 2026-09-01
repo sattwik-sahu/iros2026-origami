@@ -139,7 +139,7 @@ def _train(cfg: DictConfig) -> None:
         log_every_n_steps=tcfg.callbacks.log_every_n_steps,
         val_check_interval=tcfg.callbacks.val_every_n_steps,
         gradient_clip_val=tcfg.optimizer.grad_clip,
-        deterministic=tcfg.seed is not None,
+        deterministic=tcfg.deterministic,
         num_sanity_val_steps=0,
     )
 

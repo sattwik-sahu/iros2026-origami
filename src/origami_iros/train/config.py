@@ -153,12 +153,13 @@ class TrainConfig:
     wandb: WandBConfig = field(default_factory=WandBConfig)
     hub: HubConfig = field(default_factory=HubConfig)
 
-    seed: int = 0
+    seed: Optional[int] = 0
     accelerator: str = "auto"
     devices: int = 1
     precision: str = "bf16-mixed"
     max_steps: int = 20000
     run_name: Optional[str] = None
+    deterministic: bool = False
 
     @classmethod
     def from_dictconfig(cls, cfg) -> "TrainConfig":
