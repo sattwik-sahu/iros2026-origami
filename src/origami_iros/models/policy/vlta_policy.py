@@ -9,15 +9,14 @@ multimodal :class:`Observation`, the policy produces a chunk of future actions.
 
 from __future__ import annotations
 
+from typing import Any, override
+
 import torch
-from typing import override
 from torch import nn
 
-from typing import Any
-
 from origami_iros.models._typing import Observation, ObservationEncoding
-from origami_iros.models.encoders.main import VLTA_Encoder
 from origami_iros.models.action_head.fm import FlowMatchingActionHead
+from origami_iros.models.encoders.main import VLTA_Encoder
 
 
 class VLTAPolicy(nn.Module):
