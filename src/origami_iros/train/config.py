@@ -121,7 +121,7 @@ class WandBConfig:
     """Configuration for the Weights & Biases logger."""
 
     project: str = "iros2026-origami"
-    entity: Optional[str] = "sattwik21"
+    entity: Optional[str] = "building-text"
     name: Optional[str] = None
     tags: tuple[str, ...] = ()
     save_code: bool = True
