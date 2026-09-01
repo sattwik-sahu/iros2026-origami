@@ -27,6 +27,8 @@ dependencies = [
 
 [project.scripts]
 origami-iros = "origami_iros:main"
+origami-train = "origami_iros.train_cli:main"
+origami-eval = "origami_iros.eval_cli:main"
 
 [tool.pytest.ini_options]
 markers = [
