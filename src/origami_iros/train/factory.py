@@ -145,6 +145,10 @@ def build_preprocessor(
 ) -> ObservationPreprocessor:
     """Build the sample preprocessor (whitening) from dataset statistics.
 
+    Aggregates stats across *all* seasons (pooled mean/std) rather than using
+    only the first season, which would bias whitening because seasons have
+    slightly different means (e.g. action mean 1.01 vs 0.99) and tiny-std dims.
+
     Args:
         season_roots: The season Lerobot roots.
         facts: The resolved data facts (used to pad the statistics).
@@ -153,7 +157,43 @@ def build_preprocessor(
     Returns:
         A configured :class:`ObservationPreprocessor`.
     """
-    stats = DatasetStats.load(season_roots[0])
+    # Aggregate stats from all seasons (pooled)
+    from origami_iros.data.metadata import DatasetStats as _DS
+    import numpy as np
+
+    all_stats = [_DS.load(r) for r in season_roots]
+    # Use first as base, then average across seasons weighted by count
+    base = all_stats[0]
+    # For each feature, pooled mean/std via weighted average (approx)
+    # We do simple average of means/stds weighted by count, which is sufficient
+    # for whitening robustness; exact pooled variance would need sum of squares.
+    merged = {}
+    for key in base.by_feature:
+        # Collect per-season FeatureStats for this key
+        feats = [s.by_feature[key] for s in all_stats if key in s.by_feature]
+        if not feats:
+            continue
+        counts = np.array([f.count[0] if f.count else 1 for f in feats], dtype=float)
+        w = counts / counts.sum()
+        # Weighted average for mean/std/q01/q99
+        def wavg(attr):
+            arrs = [np.asarray(getattr(f, attr), dtype=float) for f in feats]
+            # Pad to same length (action dim)
+            max_len = max(len(a) for a in arrs)
+            padded = [np.pad(a, (0, max_len - len(a))) for a in arrs]
+            stacked = np.stack(padded, axis=0)
+            return np.average(stacked, axis=0, weights=w).tolist()
+
+        merged[key] = base.by_feature[key].__class__(
+            min=wavg("min"),
+            max=wavg("max"),
+            mean=wavg("mean"),
+            std=wavg("std"),
+            q01=wavg("q01"),
+            q99=wavg("q99"),
+            count=[int(counts.sum())],
+        )
+    stats = _DS(merged)
     return ObservationPreprocessor.from_dataset_stats(
         stats,
         normalize_actions=data.normalize_actions,

@@ -32,14 +32,14 @@ class DataConfig:
 
     data_root: str = "dataset"
     dataset_subdir: str = "lerobot3.0"
-    batch_size: int = 48
-    num_workers: int = 12
+    batch_size: int = 24
+    num_workers: int = 8
     val_fraction: float = 0.2
     val_batches: int = 20
     chunk_size: int = 13
     video_backend: str = "pyav"
     pin_memory: bool = True
-    prefetch_factor: int = 4
+    prefetch_factor: int = 2
     persistent_workers: bool = True
     seed: int = 0
 
@@ -98,9 +98,9 @@ class OptimizerConfig:
     weight_decay: float = 1e-4
     grad_clip: float = 1.0
 
-    # Learning-rate schedule (transformer-style cosine with warmup).
+    # Learning-rate schedule — warmup 500/20000=2.5% (was 1000, loss flat for 1k steps)
     scheduler: str = "cosine_with_warmup"
-    warmup_steps: int = 1000
+    warmup_steps: int = 500
     total_steps: int = 20000
     lr_min: float = 1e-6
 

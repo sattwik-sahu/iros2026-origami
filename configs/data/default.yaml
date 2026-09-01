@@ -1,15 +1,17 @@
 # Dataset / data-loading configuration.
-# Tuned for RTX A4500 (20GB, 32 threads): batch 48 ~5.9GB train peak.
+# Tuned for RTX A4500 (20GB): batch 24 ~3GB train peak, 48 would be 5.9GB.
+# Data is loaded to CPU RAM first via workers (lazy ConcatDataset 5+1 seasons),
+# pinned and transferred to GPU per batch — not preloaded.
 data_root: dataset
 dataset_subdir: lerobot3.0
-batch_size: 48
-num_workers: 12
+batch_size: 24
+num_workers: 8
 val_fraction: 0.2
 val_batches: 20
 chunk_size: 13
 video_backend: pyav
 pin_memory: true
-prefetch_factor: 4
+prefetch_factor: 2
 persistent_workers: true
 seed: 0
 

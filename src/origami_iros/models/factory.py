@@ -117,7 +117,9 @@ def build_action_head(cfg: ModelConfig, chunk_size: int) -> FlowMatchingActionHe
     )
 
 
-def build_vlta_policy(cfg: ModelConfig, chunk_size: int) -> VLTAPolicy:
+def build_vlta_policy(
+    cfg: ModelConfig, chunk_size: int, action_normalizer: Any | None = None
+) -> VLTAPolicy:
     """Assemble the full policy from a resolved model config.
 
     This is the Hydra ``_target_`` factory: it builds the observation encoder and
@@ -126,6 +128,9 @@ def build_vlta_policy(cfg: ModelConfig, chunk_size: int) -> VLTAPolicy:
     Args:
         cfg: The resolved :class:`ModelConfig` (data facts already filled in).
         chunk_size: Number of action timesteps sampled per chunk.
+        action_normalizer: Optional normalizer for feasible clamping at inference.
+            When provided, ``sample_actions(..., clamp_feasible=True)`` will
+            guarantee outputs are within ``q01/q99`` limits.
 
     Returns:
         A fully-constructed :class:`VLTAPolicy`.
@@ -138,4 +143,5 @@ def build_vlta_policy(cfg: ModelConfig, chunk_size: int) -> VLTAPolicy:
         vit_dim=cfg.vit_dim,
         tactile_dim=cfg.tactile_dim,
         hidden_dim=cfg.hidden_dim,
+        action_normalizer=action_normalizer,
     )

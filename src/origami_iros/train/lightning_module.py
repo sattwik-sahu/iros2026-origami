@@ -106,6 +106,7 @@ class VLTA_pl_module(L.LightningModule):
         model_config: ModelConfig,
         optimizer_config: OptimizerConfig,
         chunk_size: int,
+        action_normalizer: Any | None = None,
     ) -> None:
         """Initialise the module.
 
@@ -115,14 +116,19 @@ class VLTA_pl_module(L.LightningModule):
             optimizer_config: Optimizer and learning-rate schedule hyperparameters.
             chunk_size: Number of action timesteps predicted per chunk. Must
                 match the window used to build the dataset's ``delta_timestamps``.
+            action_normalizer: Optional normalizer for feasible clamping (from
+                stats.json). If provided, it is passed to the policy so that
+                ``sample_feasible_actions`` is available and logging can report
+                feasible vs raw.
         """
         super().__init__()
         self.save_hyperparameters()
         self.model_config = model_config
         self.optimizer_config = optimizer_config
         self.chunk_size = chunk_size
+        self.action_normalizer = action_normalizer
 
-        self.model = build_vlta_policy(model_config, chunk_size)
+        self.model = build_vlta_policy(model_config, chunk_size, action_normalizer=action_normalizer)
 
     @override
     def training_step(self, batch, batch_idx: int) -> torch.Tensor:
@@ -178,8 +184,20 @@ class VLTA_pl_module(L.LightningModule):
         return LRScheduleOptimizer(optimizer, scheduler)
 
     @override
+    def on_before_optimizer_step(self, optimizer) -> None:
+        """Log gradient norm before optimizer step (wandb numeric)."""
+        # Compute global grad norm
+        grads = [p.grad for p in self.model.parameters() if p.grad is not None]
+        if grads:
+            grad_norm = torch.norm(torch.stack([g.detach().norm(2) for g in grads]), 2)
+            self.log("grad_norm", grad_norm, on_step=True, on_epoch=False, prog_bar=False)
+            # param norm
+            param_norm = torch.norm(torch.stack([p.detach().norm(2) for p in self.model.parameters()]), 2)
+            self.log("param_norm", param_norm, on_step=True, on_epoch=False)
+
+    @override
     def on_train_batch_end(self, outputs, batch, batch_idx: int) -> None:
-        """Log the current learning rate after each training batch.
+        """Log the current learning rate and additional diagnostics.
 
         Args:
             outputs: Output of ``training_step``.
@@ -188,6 +206,27 @@ class VLTA_pl_module(L.LightningModule):
         """
         lr = self.trainer.optimizers[0].param_groups[0]["lr"]
         self.log("lr", lr, on_step=True, on_epoch=False)
+        # Log loss histograms and action stats every 500 steps
+        if batch_idx % 500 == 0:
+            obs, action, _ = batch
+            # action stats (whitened)
+            self.log("action/mean", action.mean(), on_step=True, on_epoch=False)
+            self.log("action/std", action.std(), on_step=True, on_epoch=False)
+            self.log("action/max", action.max(), on_step=True, on_epoch=False)
+            self.log("action/min", action.min(), on_step=True, on_epoch=False)
+            # log histograms via wandb (if available)
+            try:
+                import wandb
+
+                if wandb.run is not None:
+                    wandb.log(
+                        {
+                            "histograms/action_whitened": wandb.Histogram(action.detach().cpu().numpy()),
+                        },
+                        step=self.global_step,
+                    )
+            except Exception:
+                pass
 
     @torch.inference_mode()
     def sample_for_logging(self, obs: Observation) -> torch.Tensor:

@@ -50,18 +50,33 @@ class StatsNormalize:
         eps: Small constant added to the standard deviation for numerical safety.
     """
 
-    def __init__(self, feature_stats: FeatureStats, eps: float = 1e-8) -> None:
+    def __init__(
+        self, feature_stats: FeatureStats, eps: float = 1e-8, min_std: float = 0.05
+    ) -> None:
         """Initialise the normalizer.
 
         Args:
             feature_stats: Dataset statistics (mean/std) for the feature.
             eps: Small constant added to the standard deviation for numerical safety.
+            min_std: Minimum std to avoid blowup on near-constant dims (e.g. motor
+                joints with std 0.007). Clipped to at least this value.
         """
         mean = np.asarray(feature_stats.mean, dtype=np.float32)
         std = np.asarray(feature_stats.std, dtype=np.float32)
+        # Robust: clip tiny std that would amplify noise (seen: 0.007 for motor dims)
+        std = np.maximum(std, min_std)
         self.feature_key: str | None = None
         self._mean = torch.from_numpy(mean)
         self._std = torch.clamp(torch.from_numpy(std), min=eps)
+        # Keep q01/q99 for feasible clamping at inference
+        try:
+            q01 = np.asarray(feature_stats.q01, dtype=np.float32)
+            q99 = np.asarray(feature_stats.q99, dtype=np.float32)
+            self._q01 = torch.from_numpy(q01)
+            self._q99 = torch.from_numpy(q99)
+        except Exception:
+            self._q01 = None
+            self._q99 = None
 
     def __call__(self, value: Tensor) -> Tensor:
         """Whiten ``value``.
@@ -88,6 +103,28 @@ class StatsNormalize:
             The tensor in the original data scale.
         """
         return value * self._std + self._mean
+
+    def unnormalize_and_clamp(self, value: Tensor, clamp: str = "q01_q99") -> Tensor:
+        """Unnormalize and clamp to feasible robot limits.
+
+        Args:
+            value: Whitened tensor.
+            clamp: ``"q01_q99"`` (robust), ``"min_max"`` or ``"none"``.
+
+        Returns:
+            Feasible action in original scale, clamped to limits.
+        """
+        out = self.unnormalize(value)
+        if clamp == "none" or self._q01 is None or self._q99 is None:
+            return out
+        # q01/q99 are robust limits from stats.json (1% and 99% quantiles)
+        q01 = self._q01.to(out.device) if self._q01 is not None else None
+        q99 = self._q99.to(out.device) if self._q99 is not None else None
+        if q01 is not None and q99 is not None:
+            # Handle shape broadcasting for chunked actions (..., dim)
+            # q01/q99 are (dim,) so we clamp last dim
+            out = torch.clamp(out, min=q01, max=q99)
+        return out
 
 
 class ImageNormalize:

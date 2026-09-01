@@ -82,10 +82,15 @@ def main(cfg: DictConfig) -> None:
 
 
 def _train(cfg: DictConfig) -> None:
+    import time
+
     import lightning as L
+    import torch
+    from lightning.pytorch.callbacks import LearningRateMonitor, DeviceStatsMonitor, ModelSummary
     from lightning.pytorch.loggers import CSVLogger
     from lightning.pytorch.loggers import WandbLogger
 
+    from origami_iros.train.benchmark import measure_gflops, measure_latency
     from origami_iros.train.callbacks import ActionSampleLogger, build_checkpoint_callback
     from origami_iros.train.datamodule import VLTA_pl_datamodule
     from origami_iros.train.factory import (
@@ -104,12 +109,77 @@ def _train(cfg: DictConfig) -> None:
     model_config = resolve_model_config(tcfg.model, facts)
     preprocessor = build_preprocessor(season_roots, facts, tcfg.data)
 
+    # Build action normalizer for feasible clamping (from pooled stats)
+    # Use the same preprocessor's action normalizer if available
+    action_normalizer = None
+    try:
+        # preprocessor stores normalizers dict, get "action"
+        action_normalizer = preprocessor._normalizers.get("action")  # type: ignore[attr-defined]
+    except Exception:
+        action_normalizer = None
+
     datamodule = VLTA_pl_datamodule(
         tcfg.data, fps=facts.fps, preprocessor=preprocessor
     )
     module = VLTA_pl_module(
-        model_config, tcfg.optimizer, chunk_size=tcfg.data.chunk_size
+        model_config,
+        tcfg.optimizer,
+        chunk_size=tcfg.data.chunk_size,
+        action_normalizer=action_normalizer,
     )
+
+    # --- Latency & GFLOPs benchmark (before training, logged to wandb as numeric) ---
+    # Build a dummy batch for benchmark (on GPU if available)
+    try:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        module.model.to(device)
+        module.model.eval()
+        # Create dummy obs with correct shapes (from facts)
+        from origami_iros.models._typing import (
+            ImageObservation,
+            LeftRightImageObservation,
+            Observation,
+            RobotStateObservation,
+            TactileImageObservation,
+        )
+
+        B = min(4, tcfg.data.batch_size)
+        dummy_obs = Observation(
+            image=ImageObservation(
+                head=LeftRightImageObservation(
+                    left=torch.randn(B, 3, 480, 480, device=device),
+                    right=torch.randn(B, 3, 480, 480, device=device),
+                ),
+                wrist=LeftRightImageObservation(
+                    left=torch.randn(B, 3, 480, 480, device=device),
+                    right=torch.randn(B, 3, 480, 480, device=device),
+                ),
+                tactile=TactileImageObservation(
+                    deform=torch.randn(B, 3, 480, 1200, device=device),
+                    raw=torch.randn(B, 3, 480, 1600, device=device),
+                ),
+                batch_size=[B],
+            ),
+            state=RobotStateObservation(
+                joint_state=torch.randn(B, facts.joint_state_dim, device=device),
+                joint_torque=torch.randn(B, facts.torque_dim, device=device),
+                tactile=torch.randn(B, facts.proprio_tactile_dim, device=device),
+                batch_size=[B],
+            ),
+            batch_size=[B],
+        )
+        lat = measure_latency(module.model, dummy_obs, n_warmup=10, n_iter=30)
+        gflops = measure_gflops(module.model, dummy_obs)
+        # Print for console and will be logged to wandb after init
+        print(f"[benchmark] latency {lat} gflops {gflops}")
+        # Store for wandb logging after logger init
+        _benchmark_metrics = {**lat, **gflops}
+        module.model.train()
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+    except Exception as e:  # noqa: BLE001
+        print(f"[benchmark] failed: {e}")
+        _benchmark_metrics = {}
 
     wandb_logger = WandbLogger(
         project=tcfg.wandb.project,
@@ -117,8 +187,18 @@ def _train(cfg: DictConfig) -> None:
         name=tcfg.wandb.name or tcfg.run_name,
         tags=list(tcfg.wandb.tags),
         save_code=tcfg.wandb.save_code,
+        log_model=False,
     )
     csv_logger = CSVLogger("./logs")
+
+    # Log benchmark as wandb config / summary (numeric)
+    if "_benchmark_metrics" in locals() and _benchmark_metrics:
+        # wandb can log numeric latency/gflops as config and as first step
+        wandb_logger.experiment.config.update(_benchmark_metrics, allow_val_change=True)
+        # also log as metrics at step 0
+        import wandb as _wandb
+
+        _wandb.log(_benchmark_metrics, step=0)
 
     callbacks = [
         ActionSampleLogger(every_n_steps=tcfg.callbacks.val_every_n_steps),
@@ -126,6 +206,9 @@ def _train(cfg: DictConfig) -> None:
             every_n_steps=tcfg.callbacks.checkpoint_every_n_steps,
             dirpath=tcfg.callbacks.checkpoint_dir,
         ),
+        LearningRateMonitor(logging_interval="step"),
+        DeviceStatsMonitor(),
+        ModelSummary(max_depth=2),
     ]
     if tcfg.hub.push:
         callbacks.append(
