@@ -88,6 +88,9 @@ class ModelConfig:
     action_num_heads: int = 8
     num_inference_steps: int = 10
 
+    # Loss configuration
+    loss_type: str = "mse"  # "mse" or "l1"
+
 
 @dataclass
 class OptimizerConfig:
@@ -158,6 +161,7 @@ class TrainConfig:
     seed: Optional[int] = 0
     accelerator: str = "auto"
     devices: int = 1
+    num_nodes: int = 1
     precision: str = "bf16-mixed"
     max_steps: int = 20000
     accumulate_grad_batches: int = 2

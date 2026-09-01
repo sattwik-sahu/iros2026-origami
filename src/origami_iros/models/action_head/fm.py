@@ -145,13 +145,14 @@ class FlowMatchingActionHead(BaseActionModule[torch.Tensor]):
         target_action: torch.Tensor,
         noise: torch.Tensor | None = None,
         loss_mask: torch.Tensor | None = None,
+        loss_type: str = "mse",
     ) -> torch.Tensor:
         """Conditional-OT flow-matching loss.
 
         Samples a flow time ``t`` from a Beta prior, builds the interpolated
         sample ``x_t = (1 - t) x_0 + t x_1`` via the reference probability path,
         and regresses the predicted velocity against the conditional target
-        velocity ``x_1 - x_0`` with MSE.
+        velocity ``x_1 - x_0``.
 
         Args:
             x: Encoded observation tokens of shape ``(batch, n_tokens, dim_in)``.
@@ -159,9 +160,11 @@ class FlowMatchingActionHead(BaseActionModule[torch.Tensor]):
             noise: Optional fixed noise ``x_0``; defaults to isotropic Gaussian.
             loss_mask: Optional boolean padding mask of shape ``(batch, chunk)``;
                 ``False`` entries are masked out of the loss.
+            loss_type: One of ``"mse"`` or ``"l1"``. Controls whether the
+                regression uses ``F.mse_loss`` or ``F.l1_loss``.
 
         Returns:
-            Scalar MSE loss.
+            Scalar flow-matching loss (MSE or L1, per configured type).
         """
         batch_size = x.size(0)
         device = x.device
@@ -169,19 +172,28 @@ class FlowMatchingActionHead(BaseActionModule[torch.Tensor]):
 
         # Time sampling follows the original flow-matching paper (Beta prior).
         t = self._sample_time(batch_size, device)
-
         x_0 = torch.randn_like(target_action) if noise is None else noise
         path_sample = self.prob_path.sample(x_0=x_0, x_1=target_action, t=t)
 
         memory = self.velocity_model.memory_from_tokens(x)
         v_pred = self.velocity_model(path_sample.x_t, t, memory)
 
-        if loss_mask is None:
-            return F.mse_loss(v_pred, path_sample.dx_t)
+        target_velocity = path_sample.dx_t
 
-        per_elem = F.mse_loss(v_pred, path_sample.dx_t, reduction="none")
-        mask = (~loss_mask).float().unsqueeze(-1)
-        return (per_elem * mask).sum() / mask.sum().clamp_min(1.0)
+        if loss_type == "l1":
+            if loss_mask is None:
+                return F.l1_loss(v_pred, target_velocity)
+
+            per_elem = F.l1_loss(v_pred, target_velocity, reduction="none")
+            mask = (~loss_mask).float().unsqueeze(-1)
+            return (per_elem * mask).sum() / mask.sum().clamp_min(1.0)
+        else:  # mse (default)
+            if loss_mask is None:
+                return F.mse_loss(v_pred, target_velocity)
+
+            per_elem = F.mse_loss(v_pred, target_velocity, reduction="none")
+            mask = (~loss_mask).float().unsqueeze(-1)
+            return (per_elem * mask).sum() / mask.sum().clamp_min(1.0)
 
     def sample_actions(
         self,
