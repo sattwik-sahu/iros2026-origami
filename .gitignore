@@ -180,6 +180,7 @@ pyrightconfig.json
 /checkpoints/
 /wandb/
 /logs/
+/misc/
 
 # Marimo notebook session checkpoints
 __marimo__/
