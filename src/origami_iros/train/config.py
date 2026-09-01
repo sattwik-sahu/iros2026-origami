@@ -23,16 +23,24 @@ from hydra.core.config_store import ConfigStore
 
 @dataclass
 class DataConfig:
-    """Configuration for the LeRobot season dataset and loading."""
+    """Configuration for the LeRobot season dataset and loading.
+
+    Tuned for RTX A4500 (20GB VRAM, 32 threads): batch 48 uses ~5.9GB training
+    peak, leaving headroom for optimizer states/activations; 12 workers
+    saturate CPU decode without thrashing.
+    """
 
     data_root: str = "dataset"
     dataset_subdir: str = "lerobot3.0"
-    batch_size: int = 96
-    num_workers: int = 8
+    batch_size: int = 48
+    num_workers: int = 12
     val_fraction: float = 0.2
     val_batches: int = 20
     chunk_size: int = 13
     video_backend: str = "pyav"
+    pin_memory: bool = True
+    prefetch_factor: int = 4
+    persistent_workers: bool = True
     seed: int = 0
 
     # Optional overrides for data facts derived from metadata. When set to None
@@ -112,8 +120,8 @@ class CallbacksConfig:
 class WandBConfig:
     """Configuration for the Weights & Biases logger."""
 
-    project: str = "vlta-flow-matching"
-    entity: Optional[str] = None
+    project: str = "iros2026-origami"
+    entity: Optional[str] = "sattwik21"
     name: Optional[str] = None
     tags: tuple[str, ...] = ()
     save_code: bool = True
@@ -129,9 +137,9 @@ class HubConfig:
         beforehand with ``huggingface-cli login``.
     """
 
-    push: bool = False
-    repo_id: str = "org/vlta-flow-matching-north-ces"
-    private: bool = True
+    push: bool = True
+    repo_id: str = "sattwik21/sharpa-north-origami"
+    private: bool = False
 
 
 @dataclass

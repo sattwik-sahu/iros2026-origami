@@ -2,6 +2,6 @@
 #
 # Set `push: true` to upload the trained model to the hub at the end of training.
 # Authenticate first with:  huggingface-cli login
-push: false
-repo_id: your-org/vlta-flow-matching-north-ces
-private: true
+push: true
+repo_id: sattwik21/sharpa-north-origami
+private: false

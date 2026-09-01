@@ -8,6 +8,7 @@ for the VLTA policy.
 from __future__ import annotations
 
 import lightning as L
+import torch
 from typing import override
 from torch.utils.data import DataLoader
 
@@ -70,23 +71,40 @@ class VLTA_pl_datamodule(L.LightningDataModule):
             video_backend=cfg.video_backend,
         )
 
+        pin_memory = cfg.pin_memory and torch.cuda.is_available()
+        prefetch = cfg.prefetch_factor if cfg.num_workers > 0 else None
         common = dict(
             batch_size=cfg.batch_size,
             collate_fn=vlta_collate_fn,
             num_workers=cfg.num_workers,
-            persistent_workers=cfg.num_workers > 0,
+            persistent_workers=cfg.persistent_workers and cfg.num_workers > 0,
+            pin_memory=pin_memory,
+            prefetch_factor=prefetch,
         )
+        # DataLoader prefetch_factor must be None when num_workers==0
+        if cfg.num_workers == 0:
+            common.pop("prefetch_factor", None)
         self._train_loader = DataLoader(
             train_ds, shuffle=True, drop_last=True, **common
         )
+        val_common = dict(
+            batch_size=cfg.batch_size,
+            collate_fn=vlta_collate_fn,
+            num_workers=max(1, cfg.num_workers // 2),
+            persistent_workers=cfg.persistent_workers and cfg.num_workers > 0,
+            pin_memory=pin_memory,
+            prefetch_factor=prefetch,
+        )
+        if max(1, cfg.num_workers // 2) == 0 or cfg.num_workers == 0:
+            val_common.pop("prefetch_factor", None)
+        # keep prefetch for val if workers>0
+        if val_common.get("num_workers", 0) == 0:
+            val_common.pop("prefetch_factor", None)
         self._val_loader = DataLoader(
             val_ds,
             shuffle=False,
             drop_last=False,
-            batch_size=cfg.batch_size,
-            collate_fn=vlta_collate_fn,
-            num_workers=max(1, cfg.num_workers // 2),
-            persistent_workers=cfg.num_workers > 0,
+            **val_common,
         )
 
     @override
