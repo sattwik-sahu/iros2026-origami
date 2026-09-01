@@ -7,20 +7,21 @@ import wandb
 from torch.utils.data import DataLoader
 
 from origami_iros.modules.policy.vlta_policy import VLTAPolicy
-from origami_iros.modules.data.lerobot_seasons import build_train_val_datasets
+from origami_iros.modules.data.dataset import build_train_val_datasets
 from origami_iros.modules.data.collate import vlta_collate_fn
-
+import numpy as np 
+np.random.seed(0)
 
 @dataclass
 class TrainConfig:
-    data_root: str = "./data"
+    data_root: str = "/media/storage/Pranjal/shirish/origami/iros2026-origami/data"
     fps: int = 30
 
     vit_model_name: str = "facebook/dinov2-small"
     image_size: tuple[int, int] = (480, 480)
     vit_dim: int = 384
 
-    tactile_image_size: tuple[int, int] = (480, 1200)
+    tactile_image_size: tuple[int, int] = (480, 1280)
     tactile_patch_size: int = 16
     tactile_dim: int = 192
     n_hands: int = 2
@@ -38,17 +39,17 @@ class TrainConfig:
     action_num_heads: int = 8
     num_inference_steps: int = 10
     freeze_vit: bool = True
-    
-    batch_size: int = 16
+
+    batch_size: int = 96
     num_workers: int = 8
     lr: float = 1e-4
-    lr_min: float = 2.5e-6
-    warmup_steps: int = 100
-    total_steps: int = 200_000
-    log_every: int = 50
-    val_every: int = 2_000
+    lr_min: float = 1e-6
+    warmup_steps: int = 1000
+    total_steps: int = 20000
+    log_every: int = 10
+    val_every: int = 1000
     val_batches: int = 20
-    ckpt_every: int = 5_000
+    ckpt_every: int = 1000
     ckpt_dir: str = "checkpoints"
     val_fraction: float = 0.1
     wandb_project: str = "vlta-flow-matching"
@@ -85,7 +86,9 @@ def main(cfg: TrainConfig):
     Path(cfg.ckpt_dir).mkdir(parents=True, exist_ok=True)
 
     delta_timestamps = {"action": [i / cfg.fps for i in range(cfg.chunk_size)]}
-    train_ds, val_ds = build_train_val_datasets(cfg.data_root, delta_timestamps, val_fraction=cfg.val_fraction)
+    train_ds, val_ds = build_train_val_datasets(
+        cfg.data_root, delta_timestamps, val_fraction=cfg.val_fraction, fps=cfg.fps
+    )
 
     train_loader = DataLoader(
         train_ds, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers,
@@ -159,4 +162,4 @@ def main(cfg: TrainConfig):
 
 
 if __name__ == "__main__":
-    main(TrainConfig(data_root="./data"))
+    main(TrainConfig())

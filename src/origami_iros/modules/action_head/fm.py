@@ -128,7 +128,7 @@ class FlowMatchingActionHead(BaseActionModule[torch.Tensor]):
             v_pred = self.predict_velocity(act, t_curr, memory)
             act = act + v_pred * dt
 
-        return act.reshape(batch_size, self.dim_action)
+        return act.reshape(batch_size, self.chunk_size, self.dim_action)
 
     def forward(self, x: torch.Tensor) -> Action:
         return self.sample_actions(x)

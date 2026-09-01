@@ -6,8 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "einops>=0.8.2",
-    "lerobot>=0.6.1",
+    "lerobot[dataset,training]>=0.6.1",
     "numpy>=2.2.6",
+    "peft>=0.20.0",
     "scikit-learn>=1.9.0",
     "scipy>=1.18.1",
     "stable-pretraining>=0.1.8",
