@@ -1,0 +1,6 @@
+# Weights & Biases logger configuration.
+project: iros2026-origami
+entity: building-text
+name: null
+tags: []
+save_code: true

@@ -177,9 +177,9 @@ pyrightconfig.json
 
 # Project data / artifacts
 /dataset/
-checkpoints/
-wandb/
-logs/
+/checkpoints/
+/wandb/
+/logs/
 
 # Marimo notebook session checkpoints
 __marimo__/
