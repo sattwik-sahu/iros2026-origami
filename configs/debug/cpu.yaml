@@ -1,0 +1,35 @@
+# Debug config: tiny run for CPU smoke-testing the pipeline.
+# Use:  python train.py debug=cpu
+#       python eval.py debug=cpu
+#
+# Only a few steps, small batch, single device, no hub push.
+
+data:
+  batch_size: 2
+  num_workers: 0
+  chunk_size: 4
+  val_fraction: 0.5
+
+model:
+  action_num_layers: 1
+  action_num_heads: 2
+  hidden_dim: 64
+  action_hidden_dim: 64
+  num_inference_steps: 2
+
+optimizer:
+  warmup_steps: 2
+  total_steps: 6
+  lr: 1.0e-4
+
+accelerator: cpu
+devices: 1
+precision: 32
+max_steps: 4
+seed: 0
+
+wandb:
+  project: vlta-debug
+
+hub:
+  push: false

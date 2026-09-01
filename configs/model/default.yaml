@@ -1,0 +1,27 @@
+# Model architecture configuration.
+#
+# Dimension fields marked `null` (action_dim, torque_dim, joint_state_dim,
+# proprio_tactile_dim, image_size, tactile_image_size) are filled from the
+# dataset metadata at runtime. Only set them here to override the data.
+
+vit_model_name: facebook/dinov2-small
+image_size: null
+vit_dim: 384
+freeze_vit: true
+
+tactile_image_size: null
+tactile_patch_size: 16
+n_hands: 2
+n_fingers: 5
+
+torque_dim: null
+joint_state_dim: null
+proprio_tactile_dim: null
+action_dim: null
+tactile_dim: 192
+
+hidden_dim: 512
+action_hidden_dim: 512
+action_num_layers: 6
+action_num_heads: 8
+num_inference_steps: 10

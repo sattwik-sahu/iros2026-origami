@@ -1,0 +1,23 @@
+# Default training configuration for the VLTA flow-matching policy.
+#
+# Hydra composes this file with the sub-configs referenced by `defaults` below.
+# Data facts (fps, action dimension, tactile dimension, image sizes) are derived
+# at runtime from the dataset's `meta/info.json`, so they are NOT listed here —
+# only architecture and training choices are.
+
+defaults:
+  - data: default
+  - model: default
+  - optimizer: default
+  - callbacks: default
+  - wandb: default
+  - hub: default
+  - _self_
+
+hydra:
+  run:
+    dir: logs/${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    config:
+      override_dirname:
+        exclude_keys: [wandb]

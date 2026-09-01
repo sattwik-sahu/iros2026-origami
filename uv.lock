@@ -760,6 +760,20 @@ wheels = [
 ]
 
 [[package]]
+name = "flow-matching"
+version = "1.0.10"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "torch" },
+    { name = "torchdiffeq" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/52/5d/e92c12d1df3d685c595371a9dcae5ce4c79d0e095c07217b80d02bfe5333/flow_matching-1.0.10.tar.gz", hash = "sha256:b9cebb2534a1bead4fd8b6af9269cf75da88335adec629865be41e5f93bf5821", size = 33400, upload-time = "2024-12-18T14:51:53.803Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/13/80d356a38b976df17be3fc3208da468488d5af7437aab4a694cd35432610/flow_matching-1.0.10-py3-none-any.whl", hash = "sha256:9e7bb6c51b5804bbb1450f59fbd04e2f843adc0b7665d0f4f341f420dce04136", size = 48680, upload-time = "2024-12-18T14:51:51.431Z" },
+]
+
+[[package]]
 name = "fonttools"
 version = "4.63.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2122,16 +2136,25 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "einops" },
+    { name = "flow-matching" },
+    { name = "huggingface-hub" },
+    { name = "hydra-core" },
     { name = "lerobot", extra = ["dataset", "training"] },
     { name = "numpy" },
+    { name = "overrides" },
+    { name = "peekpy" },
     { name = "peft" },
+    { name = "pytorch-lightning" },
+    { name = "safetensors" },
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "stable-pretraining" },
     { name = "tensordict" },
     { name = "torch" },
+    { name = "torchdiffeq" },
     { name = "torchvision" },
     { name = "transformers" },
+    { name = "wandb" },
 ]
 
 [package.dev-dependencies]
@@ -2145,16 +2168,25 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "einops", specifier = ">=0.8.2" },
+    { name = "flow-matching", specifier = ">=1.0.10" },
+    { name = "huggingface-hub", specifier = ">=1.28.0" },
+    { name = "hydra-core", specifier = ">=1.3.5" },
     { name = "lerobot", extras = ["dataset", "training"], specifier = ">=0.6.1" },
     { name = "numpy", specifier = ">=2.2.6" },
+    { name = "overrides", specifier = ">=7.7.0" },
+    { name = "peekpy", specifier = ">=0.1.0a4" },
     { name = "peft", specifier = ">=0.20.0" },
+    { name = "pytorch-lightning", specifier = ">=2.6.5" },
+    { name = "safetensors", specifier = ">=0.8.0" },
     { name = "scikit-learn", specifier = ">=1.9.0" },
     { name = "scipy", specifier = ">=1.18.1" },
     { name = "stable-pretraining", specifier = ">=0.1.8" },
     { name = "tensordict", specifier = ">=0.14.0" },
     { name = "torch", specifier = ">=2.11.0" },
+    { name = "torchdiffeq", specifier = ">=0.2.5" },
     { name = "torchvision", specifier = ">=0.26.0" },
     { name = "transformers", specifier = ">=5.15.1" },
+    { name = "wandb", specifier = ">=0.27.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -2215,6 +2247,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/11/a6/79aed402eb3ab284dc5b4791a7ad62c5875127de01b8e3f04bd92d551298/orjson-3.12.0-cp315-cp315-win32.whl", hash = "sha256:03091c8a64db4be38746597ceea68f33c238e27acd9bfe99fb59420224ae7a55", size = 128048, upload-time = "2026-08-14T16:13:26.217Z" },
     { url = "https://files.pythonhosted.org/packages/64/f7/2723e264aab7248c1ed6ecaad8e5d0cb866c0cffde75442102ffa7491aba/orjson-3.12.0-cp315-cp315-win_amd64.whl", hash = "sha256:2b7bcefb9f40fa242fa6b06377232c048e655747790829609168c01162f60578", size = 121860, upload-time = "2026-08-14T16:13:27.577Z" },
     { url = "https://files.pythonhosted.org/packages/82/56/630c9113ec8996778f1f0304b364b091b9a9db5fef5fdc17cca622f5ea24/orjson-3.12.0-cp315-cp315-win_arm64.whl", hash = "sha256:859fc4196855890150bb08e649b30d2c93b249b3e3edd0d3bb2231abf8aa8adc", size = 126754, upload-time = "2026-08-14T16:13:28.962Z" },
+]
+
+[[package]]
+name = "overrides"
+version = "7.7.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/86/b585f53236dec60aba864e050778b25045f857e17f6e5ea0ae95fe80edd2/overrides-7.7.0.tar.gz", hash = "sha256:55158fa3d93b98cc75299b1e67078ad9003ca27945c76162c1c0766d6f91820a", size = 22812, upload-time = "2024-01-27T21:01:33.423Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2c/ab/fc8290c6a4c722e5514d80f62b2dc4c4df1a68a41d1364e625c35990fcf3/overrides-7.7.0-py3-none-any.whl", hash = "sha256:c7ed9d062f78b8e4c1a7b70bd8796b35ead4d9f510227ef9c5dc7626c60d7e49", size = 17832, upload-time = "2024-01-27T21:01:31.393Z" },
 ]
 
 [[package]]
@@ -2280,6 +2321,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/30/4b/90c937815137d43ce71ba043cd3566221e9df6b9c805f24b5d138c9d40a7/parso-0.8.7.tar.gz", hash = "sha256:eaaac4c9fdd5e9e8852dc778d2d7405897ec510f2a298071453e5e3a07914bb1", size = 401824, upload-time = "2026-05-01T23:13:02.138Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/99/5d/8268b644392ee874ee82a635cd0df1773de230bde356c38de28e298392cc/parso-0.8.7-py2.py3-none-any.whl", hash = "sha256:a8926eb2a1b915486941fdbd31e86a4baf88fe8c210f25f2f35ecec5b574ca1c", size = 107025, upload-time = "2026-05-01T23:12:58.867Z" },
+]
+
+[[package]]
+name = "peekpy"
+version = "0.1.0a4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/e7/876b6497ee5dfe2a2b866fbdc0dd3d7bc8c6427eca3bd57f7dbc5b0783fe/peekpy-0.1.0a4.tar.gz", hash = "sha256:f0a13b6de0f7bea20cae534963e26dfa34c4d076fadd10fc82468ef725572c19", size = 7617, upload-time = "2025-07-03T18:58:19.409Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/40/0f/909841c9526caa980f84c1b19558d50ed90ab353e220716dc2278c2305a1/peekpy-0.1.0a4-py3-none-any.whl", hash = "sha256:8a1af5ea282ab5072a6782968642242087181d6e1565ff4e6a2c0d111893d001", size = 11204, upload-time = "2025-07-03T18:58:18.664Z" },
 ]
 
 [[package]]
@@ -3505,6 +3555,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/1e/e37bd46ffac9eec1a9afc32c5097cd83b0de1e865021f7f953c5142919f4/torchcodec-0.11.1-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:170a3efea64f0cd2c21cee0a233a9e13c67a704b5c5e7ef9aeda31e747ac6885", size = 2402232, upload-time = "2026-04-14T18:25:08.026Z" },
     { url = "https://files.pythonhosted.org/packages/8f/d0/a9173dbfa011cc2224f7489e50844b9f62110050bbdbd9d29485e7f1e0e2/torchcodec-0.11.1-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:db66ddce36a6fa35f30fbe1d78b57289fcb53f8f43c1c85923edbe339540c665", size = 2334158, upload-time = "2026-04-14T18:25:09.77Z" },
     { url = "https://files.pythonhosted.org/packages/18/96/6ee0e26547976dc55a69042ce895747a34221eab348931e975141d80d25e/torchcodec-0.11.1-cp314-cp314-win_amd64.whl", hash = "sha256:3fd9ef8302b261d3db5585e42be4a3138c5c240a822031642cdf1f82ea3db5b7", size = 1925002, upload-time = "2026-04-14T18:25:11.718Z" },
+]
+
+[[package]]
+name = "torchdiffeq"
+version = "0.2.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "scipy" },
+    { name = "torch" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/87/ec/a40aa124660f0ee65e6760cb53df6a82ad91a1a3ef1da5e747f1336644dd/torchdiffeq-0.2.5.tar.gz", hash = "sha256:b50d3760d13fd138dcceac651f4b80396f44fefcebd037a033fecfeaa9cc12e7", size = 31197, upload-time = "2024-11-21T20:20:11.552Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b9/35/537f64f2d0b3cfebaae0f903b4e3a3b239abcc99d0f73cb15b9cee9b8212/torchdiffeq-0.2.5-py3-none-any.whl", hash = "sha256:aa1db4bed13bd04952f28a53cdf4336d1ab60417c1d9698d7a239fec1cf2bcf8", size = 32902, upload-time = "2024-11-21T20:20:09.938Z" },
 ]
 
 [[package]]

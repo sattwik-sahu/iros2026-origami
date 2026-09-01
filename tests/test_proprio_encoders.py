@@ -3,8 +3,8 @@
 import torch
 from torch import nn
 
-from origami_iros.modules._typing import RobotStateObservation
-from origami_iros.modules.encoders.proprio import (
+from origami_iros.models._typing import RobotStateObservation
+from origami_iros.models.encoders.proprio import (
     LearnedMultiTokenStateEncoder,
     ModalityEncoder,
     SingleTokenStateEncoder,

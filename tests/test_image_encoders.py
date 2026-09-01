@@ -3,10 +3,11 @@
 import pytest
 import torch
 
-from origami_iros.modules._typing import ImageObservation, LeftRightImageObservation, TactileImageObservation
-from origami_iros.modules.base import BaseImageEncoder, BaseTactileImageEncoder
-from origami_iros.modules.encoders.image import (
+from origami_iros.models._typing import ImageObservation, LeftRightImageObservation, TactileImageObservation
+from origami_iros.models.base import BaseImageEncoder, BaseTactileImageEncoder
+from origami_iros.models.encoders.image import (
     CameraImageEncoder,
+    PerFingerSingleTokenTactileEncoder,
     PretrainedHF_ViT_Encoder,
     TactileImageEncoder,
     TinyViT_TactileImageEncoder,
@@ -104,17 +105,17 @@ class TestCameraImageEncoder:
 # ── TactileImageEncoder wrapper ───────────────────────────────────────
 
 class TestTactileImageEncoderWrapper:
-    def test_output_shape(self, device):
+    def test_raw_output_shape(self, device):
         inner = _DummyTactileEncoder(
             image_size=(H, W), n_hands=2, n_fingers=4, out_dim=32
         ).to(device)
-        enc = TactileImageEncoder(encoder=inner).to(device)
+        enc = TactileImageEncoder(primary_encoder=inner).to(device)
         obs = _make_image_obs(device)
         out = enc(obs)
         assert out.shape == (BATCH, 1, 32)
 
     def test_uses_tactile_raw(self, device):
-        """Wrapper must extract tactile.raw, not deform."""
+        """The primary encoder must consume tactile.raw (the real signal)."""
         class RecordingEncoder(BaseTactileImageEncoder):
             def __init__(self):
                 super().__init__(image_size=(H, W), n_hands=2, n_fingers=4)
@@ -125,10 +126,30 @@ class TestTactileImageEncoderWrapper:
                 return torch.zeros(1)
 
         recorder = RecordingEncoder().to(device)
-        enc = TactileImageEncoder(encoder=recorder).to(device)
+        enc = TactileImageEncoder(primary_encoder=recorder).to(device)
         obs = _make_image_obs(device)
         enc(obs)
         assert recorder.last_input is obs.tactile.raw
+
+    def test_uses_deform_when_secondary_provided(self, device):
+        """When a secondary encoder is supplied, its tokens are appended."""
+        from origami_iros.models.encoders.image import TactileImageEncoder as TE
+
+        class Dummy(BaseTactileImageEncoder):
+            def __init__(self, out_dim=8):
+                super().__init__(image_size=(H, W), n_hands=2, n_fingers=4)
+                self.out_dim = out_dim
+
+            def forward(self, x):
+                b = x.shape[0]
+                return torch.zeros(b, 1, self.out_dim)
+
+        enc = TE(primary_encoder=Dummy(8), secondary_encoder=Dummy(8), secondary_dropout=0.0)
+        enc.eval()
+        obs = _make_image_obs(device)
+        out = enc(obs)
+        # raw (1 token dim 8) concatenated with deform (1 token dim 8) -> (B, 2, 8)
+        assert out.shape == (BATCH, 2, 8)
 
 
 # ── PretrainedHF_ViT_Encoder (DINOv2-small) ───────────────────────────
@@ -251,12 +272,15 @@ class TestTinyViT_TactileImageEncoder:
         assert enc._model.config.num_channels == n_hands * n_fingers
 
     def test_model_image_size(self, device):
-        """Model image_size must match per-finger resolution."""
+        """Model image_size must be square (padded) so the ViT pos-embedding works."""
         n_hands, n_fingers = 2, 4
         enc = TinyViT_TactileImageEncoder(
             image_size=(H, W), patch_size=4, n_hands=n_hands, n_fingers=n_fingers
         ).to(device)
-        assert enc._model.config.image_size == (H // n_hands, W // n_fingers)
+        h_pf, w_pf = H // n_hands, W // n_fingers
+        side_patches = max(1, round(((h_pf // 4) * (w_pf // 4)) ** 0.5))
+        expected_side = side_patches * 4
+        assert enc._model.config.image_size == (expected_side, expected_side)
 
     def test_various_embodiments(self, device):
         """Encoder must work with different hand/finger counts."""
@@ -271,3 +295,66 @@ class TestTinyViT_TactileImageEncoder:
             w_pf = full_w // n_f
             n_patches = (h_pf // 4) * (w_pf // 4)
             assert out.shape == (1, n_patches, enc._model.config.hidden_size)
+
+
+# ── PerFingerSingleTokenTactileEncoder ────────────────────────────────
+
+class TestPerFingerSingleTokenTactileEncoder:
+    def test_forward_shape(self, device):
+        """Each finger image yields exactly one token of the requested dim."""
+        n_hands, n_fingers, token_dim = 2, 5, 64
+        full_h, full_w = 480, 1280
+        enc = PerFingerSingleTokenTactileEncoder(
+            image_size=(full_h, full_w),
+            patch_size=16,
+            n_hands=n_hands,
+            n_fingers=n_fingers,
+            token_dim=token_dim,
+        ).to(device)
+        x = torch.randn(BATCH, C, full_h, full_w, device=device)
+        out = enc(x)
+        assert out.shape == (BATCH, n_hands * n_fingers, token_dim)
+        assert out.device.type == device.type
+
+    def test_fully_connected_gradients(self, device):
+        """All parameters must receive gradients after a backward pass."""
+        n_hands, n_fingers, token_dim = 2, 2, 32
+        full_h, full_w = 240, 240
+        enc = PerFingerSingleTokenTactileEncoder(
+            image_size=(full_h, full_w),
+            patch_size=16,
+            n_hands=n_hands,
+            n_fingers=n_fingers,
+            token_dim=token_dim,
+        ).to(device)
+        x = torch.randn(2, C, full_h, full_w, device=device)
+        out = enc(x)
+        out.sum().backward()
+        # ViT's unused `mask_token` parameter is idle unless MAE masking is used.
+        missing = [
+            name
+            for name, p in enc.named_parameters()
+            if p.grad is None and "mask_token" not in name
+        ]
+        assert not missing, f"no gradient reached: {missing}"
+
+    def test_batch_1(self, device):
+        n_hands, n_fingers = 1, 2
+        full_h, full_w = 240, 240
+        enc = PerFingerSingleTokenTactileEncoder(
+            image_size=(full_h, full_w), patch_size=16, n_hands=n_hands, n_fingers=n_fingers
+        ).to(device)
+        x = torch.randn(1, C, full_h, full_w, device=device)
+        out = enc(x)
+        assert out.shape == (1, n_hands * n_fingers, enc._token_dim)
+
+    def test_non_square_finger_padded(self, device):
+        """Non-square finger images are padded to a square multiple of patch size."""
+        n_hands, n_fingers = 2, 5
+        full_h, full_w = 480, 1280  # finger h=240, w=256 (non-square patch counts)
+        enc = PerFingerSingleTokenTactileEncoder(
+            image_size=(full_h, full_w), patch_size=16, n_hands=n_hands, n_fingers=n_fingers
+        ).to(device)
+        x = torch.randn(1, C, full_h, full_w, device=device)
+        out = enc(x)
+        assert out.shape == (1, n_hands * n_fingers, enc._token_dim)

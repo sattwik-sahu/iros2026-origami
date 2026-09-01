@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 import torch
 
-from origami_iros.modules._typing import VLTA_Input, VLTA_Output
-from origami_iros.modules.io import (
+from origami_iros.models._typing import VLTA_Input, VLTA_Output
+from origami_iros.data.io import (
     to_vlta_input,
     to_vlta_output,
     vlta_input_to_dict,

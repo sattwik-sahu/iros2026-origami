@@ -1,0 +1,19 @@
+# Dataset / data-loading configuration.
+data_root: dataset
+dataset_subdir: lerobot3.0
+batch_size: 96
+num_workers: 8
+val_fraction: 0.2
+val_batches: 20
+chunk_size: 13
+video_backend: pyav
+seed: 0
+
+# Data facts (fps, dims, image sizes) are auto-derived from the dataset metadata.
+# Leave fps_override as null to use the recorded fps.
+fps_override: null
+
+normalize_actions: true
+normalize_state: true
+normalize_tactile: true
+normalize_torque: true

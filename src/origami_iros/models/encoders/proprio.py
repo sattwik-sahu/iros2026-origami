@@ -1,8 +1,9 @@
 import torch
+from typing import override
 from torch import nn
 
-from origami_iros.modules._typing import RobotStateObservation
-from origami_iros.modules.base import BaseProprioceptiveStateEncoder
+from origami_iros.models._typing import RobotStateObservation
+from origami_iros.models.base import BaseProprioceptiveStateEncoder
 
 
 class ModalityEncoder(nn.Module):
@@ -20,6 +21,7 @@ class ModalityEncoder(nn.Module):
         self.joint_state_encoder = joint_state_encoder
         self.tactile_encoder = tactile_encoder
 
+    @override
     def forward(self, x: RobotStateObservation) -> torch.Tensor:
         return torch.stack(
             [
@@ -51,6 +53,7 @@ class SingleTokenStateEncoder(BaseProprioceptiveStateEncoder[torch.Tensor]):
 
         self.modality_embeddings = nn.Parameter(torch.randn(3, dim))
 
+    @override
     def forward(self, x: RobotStateObservation) -> torch.Tensor:
         tokens = self.encoder(x)
         return tokens + self.modality_embeddings.unsqueeze(0)
@@ -90,6 +93,7 @@ class LearnedMultiTokenStateEncoder(BaseProprioceptiveStateEncoder[torch.Tensor]
             num_layers=num_layers,
         )
 
+    @override
     def forward(self, x: RobotStateObservation) -> torch.Tensor:
         modality_tokens = self.encoder(x)
 

@@ -2,7 +2,7 @@
 
 import torch
 
-from origami_iros.modules.base import (
+from origami_iros.models.base import (
     BaseActionModule,
     BaseEncoder,
     BaseImageEncoder,

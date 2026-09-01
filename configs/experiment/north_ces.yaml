@@ -1,0 +1,17 @@
+# Experimental config for training on the North CES robot dataset.
+# Use:  python train.py experiment=north_ces
+#
+# This inherits all defaults and only tunes a few hyperparameters.
+
+data:
+  batch_size: 96
+  chunk_size: 13
+  val_fraction: 0.2
+
+optimizer:
+  lr: 1.0e-4
+  warmup_steps: 1000
+  total_steps: 20000
+
+model:
+  num_inference_steps: 10

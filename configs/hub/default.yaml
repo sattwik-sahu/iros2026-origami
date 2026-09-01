@@ -1,0 +1,7 @@
+# Hugging Face Hub push configuration.
+#
+# Set `push: true` to upload the trained model to the hub at the end of training.
+# Authenticate first with:  huggingface-cli login
+push: false
+repo_id: your-org/vlta-flow-matching-north-ces
+private: true

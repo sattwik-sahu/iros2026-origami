@@ -2,7 +2,7 @@
 import torch
 from torch.utils.data import default_collate
 
-from origami_iros.modules._typing import (
+from origami_iros.models._typing import (
     Observation,
     ImageObservation,
     LeftRightImageObservation,

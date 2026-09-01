@@ -1,7 +1,8 @@
 import torch
+from typing import override
 
-from origami_iros.modules._typing import Observation, ObservationEncoding
-from origami_iros.modules.base import (
+from origami_iros.models._typing import Observation, ObservationEncoding
+from origami_iros.models.base import (
     BaseEncoder,
     BaseImageEncoder,
     BaseProprioceptiveStateEncoder,
@@ -24,6 +25,7 @@ class VLTA_Encoder(BaseEncoder[Observation, ObservationEncoding]):
         self._tactile_image_encoder: BaseTactileImageEncoder = tactile_image_encoder
         self._state_encoder: BaseProprioceptiveStateEncoder = state_encoder
 
+    @override
     def forward(self, x: Observation) -> ObservationEncoding:
         camera_image_encoding: torch.Tensor = self._camera_image_encoder(x.image)
         tactile_image_encoding: torch.Tensor = self._tactile_image_encoder(x.image)

@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from origami_iros.modules._typing import (
+from origami_iros.models._typing import (
     ImageObservation,
     LeftRightImageObservation,
     Observation,
