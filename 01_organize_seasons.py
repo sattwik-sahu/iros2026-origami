@@ -49,7 +49,7 @@ python 01_organize_seasons.py --repo-id SharpaIT/Robotic_Origami_Challenge --all
 Requires: huggingface_hub (pulled in automatically by `pip install lerobot`).
 Make sure you've run `hf auth login` first if the dataset is gated.
 """
-
+## Download seasons
 from __future__ import annotations
 
 import argparse
