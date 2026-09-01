@@ -9,13 +9,13 @@ re-implemented hook.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, override
 
 import lightning as L
 import torch
-from typing import override
 from transformers import get_cosine_schedule_with_warmup
 
+from origami_iros._typing import Action
 from origami_iros.models._typing import Observation
 from origami_iros.models.factory import build_vlta_policy
 from origami_iros.train.config import ModelConfig, OptimizerConfig
@@ -128,10 +128,14 @@ class VLTA_pl_module(L.LightningModule):
         self.chunk_size = chunk_size
         self.action_normalizer = action_normalizer
 
-        self.model = build_vlta_policy(model_config, chunk_size, action_normalizer=action_normalizer)
+        self.model = build_vlta_policy(
+            model_config, chunk_size, action_normalizer=action_normalizer
+        )
 
     @override
-    def training_step(self, batch, batch_idx: int) -> torch.Tensor:
+    def training_step(
+        self, batch: tuple[Observation, Action, torch.Tensor], batch_idx: int
+    ) -> torch.Tensor:
         """Run one training step.
 
         Args:
@@ -190,9 +194,13 @@ class VLTA_pl_module(L.LightningModule):
         grads = [p.grad for p in self.model.parameters() if p.grad is not None]
         if grads:
             grad_norm = torch.norm(torch.stack([g.detach().norm(2) for g in grads]), 2)
-            self.log("grad_norm", grad_norm, on_step=True, on_epoch=False, prog_bar=False)
+            self.log(
+                "grad_norm", grad_norm, on_step=True, on_epoch=False, prog_bar=False
+            )
             # param norm
-            param_norm = torch.norm(torch.stack([p.detach().norm(2) for p in self.model.parameters()]), 2)
+            param_norm = torch.norm(
+                torch.stack([p.detach().norm(2) for p in self.model.parameters()]), 2
+            )
             self.log("param_norm", param_norm, on_step=True, on_epoch=False)
 
     @override
@@ -221,7 +229,9 @@ class VLTA_pl_module(L.LightningModule):
                 if wandb.run is not None:
                     wandb.log(
                         {
-                            "histograms/action_whitened": wandb.Histogram(action.detach().cpu().numpy()),
+                            "histograms/action_whitened": wandb.Histogram(
+                                action.detach().cpu().numpy()
+                            ),
                         },
                         step=self.global_step,
                     )

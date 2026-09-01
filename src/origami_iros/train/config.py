@@ -32,7 +32,7 @@ class DataConfig:
 
     data_root: str = "dataset"
     dataset_subdir: str = "lerobot3.0"
-    batch_size: int = 24
+    batch_size: int = 64
     num_workers: int = 8
     val_fraction: float = 0.2
     val_batches: int = 20
@@ -99,10 +99,12 @@ class OptimizerConfig:
     grad_clip: float = 1.0
 
     # Learning-rate schedule — warmup 500/20000=2.5% (was 1000, loss flat for 1k steps)
+    # warmup_start_lr 3e-6 ensures warmup ramps 3e-6 -> lr (1e-4), not 0 -> lr
     scheduler: str = "cosine_with_warmup"
     warmup_steps: int = 500
+    warmup_start_lr: float = 3e-6
     total_steps: int = 20000
-    lr_min: float = 1e-6
+    lr_min: float = 3e-6
 
 
 @dataclass
@@ -158,6 +160,7 @@ class TrainConfig:
     devices: int = 1
     precision: str = "bf16-mixed"
     max_steps: int = 20000
+    accumulate_grad_batches: int = 2
     run_name: Optional[str] = None
     deterministic: bool = False
 
